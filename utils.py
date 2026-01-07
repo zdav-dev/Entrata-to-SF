@@ -5,6 +5,7 @@ import datetime
 import tables.lease as lease
 import tables.parking as parking
 import tables.contractor as contractor
+import tables.pool as pool
 from dotenv import load_dotenv
 
 # Ease for queries
@@ -23,6 +24,11 @@ tables = {
         'name': 'Contractor__c',
         'columns': contractor.contractor_cols,
         'object': contractor.Contractor
+    },
+    'pool': {
+        'name': 'Pooled_Lease__c',
+        'columns': pool.pool_cols,
+        'object': None
     }
 }
 
