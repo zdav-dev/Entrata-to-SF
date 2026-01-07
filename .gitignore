@@ -1,0 +1,5 @@
+.env
+.DS_Store
+*.csv
+!example.csv
+__pycache__/
