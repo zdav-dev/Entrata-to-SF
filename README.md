@@ -7,7 +7,7 @@ The goal is to take all information from Entrata, and merge it into Salesforce a
 # About the Database
 
 ## Tables
-There are 3 tables - Leases, Contractors, and Parking Spaces
+There are 4 tables - Leases, Contractors, Parking Spaces, and Pool
 
 ## Parking Spaces
  - A list of what spaces there are in the parking garage, and which contractor owns it
@@ -20,6 +20,8 @@ There are 3 tables - Leases, Contractors, and Parking Spaces
  - Eventually, this will be populated through leads from SF, and through Entrata
  - This project will sync data and parking space assignment between the two systems
 
+## Pool
+ - Tracks leases shared by contractors, where revenue needs to be split
 
 # About the files
 
@@ -35,7 +37,8 @@ There are 3 tables - Leases, Contractors, and Parking Spaces
  - includes a few example functions for future reference on sf functionality
 
 ## sf_filter.py
- - Future use for customizing report filters rather than making a new report each month
+ - Pulls a report for 3 months, by default the previous quarter
+ - sums total for a contractor to be paid out at the end of the quarter
 
 
 # FAQ
