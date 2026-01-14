@@ -28,10 +28,9 @@ tables = {
     'pool': {
         'name': 'Pooled_Lease__c',
         'columns': pool.pool_cols,
-        'object': None
+        'object': pool.Pooled_Lease
     }
 }
-
 
 # Generic function to query any table with any where clause       
 def query_table(sf, table, where=""):
@@ -41,26 +40,31 @@ def query_table(sf, table, where=""):
     return sf.query_all(f"SELECT {cols} FROM {name} {where}")
 
 # Create a CSV file from a list of dictionaries
-def create_csv(name, data, delete=False):
-    if not data or not len(data):
-        return
+def create_csv(name, data, delete=False, logs=True):
+    if not data or not len(data) or not name:
+        return None
     
-    csv_file = f'logs/{name}.csv'
-    if delete and os.path.exists(csv_file):
-        os.remove(csv_file)
+    if logs:
+        name = f'logs/{name}'
 
-    while os.path.exists(csv_file):
-        csv_file = csv_file.replace('.csv', '(1).csv')
+    if not name.endswith('.csv'):
+        name = f'{name}.csv'
 
-    with open(csv_file, 'w', newline='', encoding='utf-8') as f:
+    if delete and os.path.exists(name):
+        os.remove(name)
+
+    while os.path.exists(name):
+        name = name.replace('.csv', '(1).csv')
+
+    with open(name, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=[col for col in data[0].keys()])
         writer.writeheader()
         writer.writerows(data)
 
-# Create a CSV file with all IDs for deletion
-def create_id_csv(data):
-    csv_file = 'to_delete.csv'
+    return name
 
+# Create a CSV file with all IDs for deletion
+def create_id_csv(data, csv_file='to_delete.csv'):
     id_list = [{'Id': record['Id']} for record in data]
 
     with open(csv_file, 'w', newline='', encoding='utf-8') as f:

@@ -1,5 +1,8 @@
 .env
 .DS_Store
 *.csv
+*entrata*.py
+*.json
 !example.csv
+!read_entrata_csv.py
 __pycache__/

@@ -1,4 +1,4 @@
-parking_cols = ', '.join(['Id', 'Name', 'Contractor_Name__c'])
+parking_cols = ', '.join(['Id', 'Name', 'Contractor_Name__c', 'Building__c', 'Contractor_Name__r.name'])
 
 class Parking_Space():
     def __init__(self, oDict):

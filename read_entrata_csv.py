@@ -82,5 +82,4 @@ def read_csv(f):
 
     return people
 
-
 people = read_csv(get_most_recent())
