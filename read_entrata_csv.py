@@ -8,7 +8,8 @@ current_cols = {
     'Current Reservation - Reserved By': 'Lessee_Name__c',
     'Current Reservation - Email': 'Email__c',
     'Current Reservation - Reservation Dates': 'Dates',
-    'Current Reservation - Lease Id': 'Entrata_Id__c'
+    'Current Reservation - Lease Id': 'Entrata_Id__c',
+    'Current Reservation - Move Out Date': 'Moveout'
 }
 
 future_cols = {
@@ -21,11 +22,13 @@ future_cols = {
 }
 
 # Most recently created file in csvs directory
-def get_most_recent():
+def get_most_recent(changed=False):
+    if changed:
+        return 'csvs/changed.csv'
+    
     data_path = 'csvs'
-    files = os.listdir(data_path)
-    files.sort(key=lambda x: os.path.getctime(os.path.join(data_path, x)))
-    return os.path.join(data_path, files[-1])
+    tgt_name = datetime.now().strftime("%Y-%m-%d") + "_Rentable Items Availability.csv"
+    return os.path.join(data_path, tgt_name)
 
 # Split each line in the csv into current and future reservations
 # Datetime format YYYY-MM-DD is comparable with >= as a string
@@ -38,6 +41,9 @@ def split_line(headerLine, line):
     result = []
     if len(current_person['Email__c']) > 3:
         result.append(current_person)
+        if current_person['Moveout'] and len(current_person['Moveout']) > 0:
+            current_person['Dates'] = f'{current_person['Dates'].split("-")[0]} - {str(current_person['Moveout'])}'
+        del current_person['Moveout']
     
     if len(future_person['Email__c']) > 3:
         result.append(future_person)
@@ -82,4 +88,5 @@ def read_csv(f):
 
     return people
 
-people = read_csv(get_most_recent())
+def get_people(changed=False):
+    return read_csv(get_most_recent(changed=changed))

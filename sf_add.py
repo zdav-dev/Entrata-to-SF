@@ -1,7 +1,12 @@
 import utils
 from datetime import datetime
-from read_entrata_csv import people
+from read_entrata_csv import get_people
 from auth import sf
+
+# Make sure most recent csv is downloaded
+utils.download_from_drive()
+# Get people from most recent changed csv
+people = get_people(changed=False)
 
 # Find a match
 comparison_cols = [
@@ -240,7 +245,6 @@ def verify_sf_data(data):
 # Create CSV logs
 # TODO: Add command line arguments for different operations
 def main():
-    utils.download_from_drive()
     # Get Lease Data from Salesforce
     data = get_leases()['records']
 

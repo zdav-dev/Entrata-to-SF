@@ -165,16 +165,52 @@ def create_diffs():
     for old, new in get_matching_files():
         log_csv_diff(f"./logs/{old}", f"./logs/{new}", f"diffs/{old.replace('.csv', '')}")
 
+
 # Deletes old log files and renames (1).csv to .csv
 def advance_logs():
     create_diffs()
     log_dir = 'logs'
     files = os.listdir(log_dir)
     for file in files:
+        # Deletes old log if it exists
         if file.endswith('(1).csv'):
             new_file = os.path.join(log_dir, file)
             old_file = new_file.replace('(1).csv', '.csv')
             os.rename(new_file, old_file)
+
+# Generic comparison between 2 csv files
+def compare_csvs(file1, file2):
+    diffs = []
+    with open(file1, 'r', encoding='utf-8-sig') as f1, open(file2, 'r', encoding='utf-8-sig') as f2:
+        csv1 = csv.reader(f1)
+        csv2 = csv.reader(f2)
+        lines1 = iter(csv1)
+        lines2 = iter(csv2)
+        headerLine = next(lines1)
+        headerLine2 = next(lines2)
+        if not all(headerLine[i] == headerLine2[i] for i in range(len(headerLine))):
+            print('CSV files have different headers, cannot compare.')
+            return []
+
+        entries1 = {line[0]: line for line in lines1}
+        entries2 = {line[0]: line for line in lines2}
+
+        # Verify that nothing has changed
+        for space, line in entries1.items():
+            if space in entries2:
+                if not all(line[i] == entries2[space][i] for i in range(len(line))):
+                    d = {headerLine[i]: line[i] for i in range(len(line))}
+                    diffs.append(d)
+            else:
+                d = {headerLine[i]: line[i] for i in range(len(line))}
+                diffs.append(d)
+                
+    return diffs
+
+def drive_csv_diff(new_file, old_file):
+    diff_file = 'csvs/changed.csv'
+    diffs = compare_csvs(new_file, old_file)
+    create_csv(diff_file, diffs, delete=True, logs=False)
 
 # Gets most recent file from google drive folder
 # "Most Recent" determined by filename date prefix YYYY-MM-DD
@@ -183,13 +219,19 @@ def download_from_drive():
     if os.path.exists(f'csvs/{tgt_name}'):
         print("Most recent file already downloaded.")
         return
+    
     load_dotenv()
     drive_dir = os.getenv("DRIVE_DIR")
     file_list = os.listdir(drive_dir)
     file_list.sort(key=lambda x: x.split("_")[0])
     most_recent = file_list[-1]
+    previous = file_list[-2] if len(file_list) > 1 else None
     print(f'Added {most_recent}')
     shutil.copyfile(f'{drive_dir}/{most_recent}', f'csvs/{most_recent}')
+
+    if previous:
+        drive_csv_diff(f'csvs/{most_recent}', f'csvs/{previous}')
+    
 
 if __name__ == "__main__":
     download_from_drive()
