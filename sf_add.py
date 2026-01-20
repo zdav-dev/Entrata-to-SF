@@ -4,9 +4,12 @@ from read_entrata_csv import get_people
 from auth import sf
 
 # Make sure most recent csv is downloaded
-utils.download_from_drive()
+available = utils.download_from_drive()
 # Get people from most recent changed csv
-people = get_people(changed=False)
+if available:
+    people = get_people(changed=False)
+else:
+    people = []
 
 # Find a match
 comparison_cols = [
@@ -245,6 +248,9 @@ def verify_sf_data(data):
 # Create CSV logs
 # TODO: Add command line arguments for different operations
 def main():
+    if not available:
+        print("No new CSV available. Exiting.")
+        return
     # Get Lease Data from Salesforce
     data = get_leases()['records']
 

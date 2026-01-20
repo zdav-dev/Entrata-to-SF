@@ -218,20 +218,28 @@ def download_from_drive():
     tgt_name = datetime.datetime.now().strftime("%Y-%m-%d") + "_Rentable Items Availability.csv"
     if os.path.exists(f'csvs/{tgt_name}'):
         print("Most recent file already downloaded.")
-        return
+        return True
     
     load_dotenv()
     drive_dir = os.getenv("DRIVE_DIR")
     file_list = os.listdir(drive_dir)
     file_list.sort(key=lambda x: x.split("_")[0])
     most_recent = file_list[-1]
+    if most_recent != tgt_name:
+        print(f"Most recent file '{most_recent}' does not match today's date '{tgt_name}'")
+        return False
+    
     previous = file_list[-2] if len(file_list) > 1 else None
     print(f'Added {most_recent}')
     shutil.copyfile(f'{drive_dir}/{most_recent}', f'csvs/{most_recent}')
 
     if previous:
-        drive_csv_diff(f'csvs/{most_recent}', f'csvs/{previous}')
-    
+        try:
+            drive_csv_diff(f'csvs/{most_recent}', f'csvs/{previous}')
+        except Exception as e:
+            print(f"Error comparing CSVs: {e}")
+
+    return True
 
 if __name__ == "__main__":
     download_from_drive()
