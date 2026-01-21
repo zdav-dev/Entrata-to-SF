@@ -64,19 +64,51 @@ def create_csv(name, data, delete=False, logs=True):
     return name
 
 # Create a CSV file with all IDs for deletion
-def create_id_csv(data, csv_file='to_delete.csv'):
-    id_list = [{'Id': record['Id']} for record in data]
+def create_id_csv(data=None, csv_file='to_delete.csv', id_list=None):
+    if (not data or not len(data)) and not id_list:
+        return
+    
+    if not id_list:
+        id_list = [{'Id': record['Id']} for record in data]
 
     with open(csv_file, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=['Id'])
         writer.writeheader()
         writer.writerows(id_list)
 
-# Delete leases from a CSV file containing IDs
-def delete_leases(sf, csv_file='to_delete.csv'):
-    job_id = sf.bulk2.Leases__c.delete(csv_file=csv_file)
-    print(f'Delete Job ID: {job_id}')
-    os.remove(csv_file)
+# Delete from a CSV file containing IDs
+def delete_from_csv(sf, csv_file="to_delete.csv", table=None):
+    if not table:
+        print("No table specified for deletion.")
+        return
+    
+    try:
+        job_id = sf.bulk2.__getattr__(table).delete(csv_file=csv_file)
+        print(f'{table} Delete Job ID: {job_id}')
+        os.remove(csv_file)
+    except FileNotFoundError:
+        print("Nothing to delete.")
+    except AttributeError:
+        print(f"Table {table} does not exist.")
+
+def insert_to_table(sf, to_insert, table=None):
+    if not table:
+        print('No table specified for insertion.')
+        return False
+    
+    if to_insert:
+        insert_results = sf.bulk2.__getattr__(table).insert(records=to_insert)
+        print(insert_results)
+        if insert_results[0]['numberRecordsFailed'] == 0:
+            return True
+        
+        # If failed records, get failed records -> csv
+        job_id = insert_results[0]['job_id']
+        sf.bulk2.Leases__c.get_failed_records(job_id, file=f'{job_id}_failed.csv')
+    else:
+        print('No records to insert into {table}.')
+
+    return False
 
 # Lists columns for a given custom table
 def list_cols(sf, obj_name):
@@ -167,13 +199,13 @@ def create_diffs():
 
 
 # Deletes old log files and renames (1).csv to .csv
-def advance_logs():
+def advance_logs(excluded = set(('added(1).csv'))):
     create_diffs()
     log_dir = 'logs'
     files = os.listdir(log_dir)
     for file in files:
         # Deletes old log if it exists
-        if file.endswith('(1).csv'):
+        if file.endswith('(1).csv') and file not in excluded:
             new_file = os.path.join(log_dir, file)
             old_file = new_file.replace('(1).csv', '.csv')
             os.rename(new_file, old_file)

@@ -60,9 +60,9 @@ def get_new_records(id_lookup):
     new_records = []
     problems = []
     for person in people:
-        entrata_id = person['Entrata_Id__c']
+        entrata_id = person.e_id
         # Entrata ID Not in the system - new Record
-        if entrata_id not in id_lookup:
+        if person.e_id not in id_lookup:
             new_records.append(person)
             continue
 
@@ -73,8 +73,8 @@ def get_new_records(id_lookup):
 
             # Perfect match (Parking space and start date)
             if all(val for val in temp_problem.values()) \
-                and parking_space_to_ref[person['Parking_Space__c']] == record['Parking_Space__c']:
-                if not person['End_Date__c'] == record['End_Date__c']:
+                and parking_space_to_ref[person.parking_space] == record['Parking_Space__c']:
+                if not person.end == record['End_Date__c']:
                     problems.append(person)
                     break
                 else:
@@ -163,26 +163,8 @@ def add_records(records):
         else:
             failed.append(updated)
 
-    # print([f"{col}: {type(val)}" for col, val in records[0].items()])
-    # print(records[0])
-    if to_insert:
-        insert_results = sf.bulk2.Leases__c.insert(records=to_insert)
-        print(insert_results)
-        # If errors occurred, get failed records and dump into CSV
-        if insert_results[0]['numberRecordsFailed'] > 0:
-            job_id = insert_results[0]['job_id']
-            sf.bulk2.Leases__c.get_failed_records(job_id, file=f'{job_id}_failed.csv')
-    else:
-        print('No records to insert.')
-
+    utils.insert_to_table(sf, to_insert, table='Leases__c')
     return to_insert, failed
-
-# Delete all leases for The Quarters on Campus
-def delete_quarters():
-    data = get_leases(quarters=True)
-    utils.create_id_csv(data)
-    utils.delete_leases(sf)
-    exit()
 
 # Only used to update Hardin House Records monthly rate to 0
 def update_records():
@@ -214,8 +196,8 @@ def update_changed(changed, records):
 def get_people_lookup():
     lookup = {}
     for person in people:
-        parking_space = parking_space_to_ref[person['Parking_Space__c']]
-        id = f"{person['Entrata_Id__c']}{parking_space}{person['Start_Date__c']}{person['End_Date__c']}"
+        parking_space = parking_space_to_ref[person.parking_space]
+        id = f"{person.e_id}{parking_space}{person.start}{person.end}"
         lookup[id] = person
 
     return lookup
@@ -260,8 +242,7 @@ def main():
     new_records, problems = get_new_records(id_lookup)
     # Records with no monthly rate are not actually signed leases
     problems = [problem for problem in problems if problem['Monthly_Rate__c'] != '']
-    # new_records = [record for record in new_records if record['Monthly_Rate__c'] != '']
-    # If an update happened, add them to new records to check for overlaps and add
+
     # changed: sf data that recognizes something has changed
     # problems: csv data that differs from sf data
     # updated: csv data that has been updated to sf

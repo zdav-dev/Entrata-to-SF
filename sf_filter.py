@@ -2,7 +2,8 @@ import argparse
 # import csv
 from utils import query_table
 from auth import sf
-from datetime import date
+from datetime import date as datetimedate
+from datetime import datetime
 from utils import create_csv
 
 def parse_args():
@@ -57,7 +58,7 @@ def get_previous_quarter(month, year):
 # Gets each month in a quarter based on current date or provided date
 # If no date provided, gets previous quarter relative to today
 def get_quarter_dates(args):
-    use_date = date.today()
+    use_date = datetimedate.today()
     month, year = use_date.month, use_date.year
 
     if args.start_year and args.start_month:
@@ -139,6 +140,7 @@ def save_records(csv_file, records, save_records_flag):
 def main():
     args = parse_args()
     dates = list(get_quarter_dates(args))
+    base_tt15_amount = 85.00
     #target_amount()
     #get_total_from_file(f'pool_{dates[0]}.csv')
     #exit()
@@ -146,7 +148,15 @@ def main():
     output_dicts = []
     total_q = 0
     for result, date in query_pool(dates):
-        payment_total = round(sum(record['TT15_Share_Amt__c'] for record in result['records']), 2)
+        years_added = (datetime.strptime(date, "%Y-%m-%d").date() - datetimedate(2017, 2, 1)).days // 365 // 5
+        start_extra = base_tt15_amount
+        for _ in range(years_added):
+            start_extra *= 1.10
+            start_extra = round(start_extra, 4)
+
+        tt15_extra = start_extra * 25
+        print(f'Adding extra ${tt15_extra:,.2f}')
+        payment_total = round(sum(record['TT15_Share_Amt__c'] for record in result['records'])+ tt15_extra, 2)
         output_dicts.append({'Date': date, '# Leases in Pool': result['totalSize'], 'TT15 Payment': payment_total})
         total_q += payment_total
 

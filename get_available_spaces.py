@@ -106,7 +106,7 @@ l = {'T':0, '2':1, 'H':2, 'C':3}
 # 2. item[0][0] according to l dict
 # 3. date comparison of item[2]
 # 4. item[1] stays in same relative order
-def comparator(item1, item2):
+def space_comparator(item1, item2):
     if item1[2] == 'OPEN' and item2[2] == 'OPEN':
         return l[item1[0][0]] - l[item2[0][0]]
     
@@ -142,7 +142,7 @@ def main():
 
         print(f'Building: {key}')
         print('-------------------')
-        s = sorted(val, key=cmp_to_key(comparator))
+        s = sorted(val, key=cmp_to_key(space_comparator))
         for space, _ in zip(s, range(0, args.print_amount)):
             print(space)
 

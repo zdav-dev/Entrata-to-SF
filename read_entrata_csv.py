@@ -2,6 +2,45 @@ import os
 import csv
 from datetime import datetime
 
+class Person:
+    attr_conversion = {
+        'Parking_Space__c': 'parking_space',
+        'Entrata_Id__c': 'e_id',
+        'Start_Date__c': 'start',
+        'End_Date__c': 'end',
+        'Lessee_Name__c': 'name',
+        'Email__c': 'email',
+        'Pass_Number__c': 'pass_num'
+    }
+
+    def __init__(self, data):
+        self.parking_space = data['Parking_Space__c']
+        self.e_id = data['Entrata_Id__c']
+        self.start = data['Start_Date__c']
+        self.end = data['End_Date__c']
+        self.name = data['Lessee_Name__c']
+        self.email = data['Email__c']
+        self.pass_num = data['Pass_Number__c']
+
+    def __getitem__(self, key):
+        if key in Person.attr_conversion:
+            return object.__getattribute__(self, Person.attr_conversion[key])
+        else:
+            return None
+        
+    def __str__(self):
+        return f"{self.name} ({self.email}): {self.start} - {self.end} in {self.parking_space}"
+    
+    def keys(self):
+        return Person.attr_conversion.keys()
+    
+    def get(self, key, default_val=None):
+        result = self.__getitem__(key)
+        if not result:
+            return default_val
+        
+        return result
+
 current_cols = {
     'Inventory Name': 'Parking_Space__c', 
     'Current Reservation - Rate': 'Monthly_Rate__c', 
@@ -53,9 +92,12 @@ def split_line(headerLine, line):
         person['Start_Date__c'] = datetime.strptime(start.strip(), "%m/%d/%Y").strftime("%Y-%m-%d")
         person['End_Date__c'] = datetime.strptime(end.strip(), "%m/%d/%Y").strftime("%Y-%m-%d")
         del person['Dates']
-
-        last, first = person['Lessee_Name__c'].split(", ")
-        first = first.split("(")[0].strip()
+        try:
+            last, first = person['Lessee_Name__c'].split(", ")
+            first = first.split("(")[0].strip()
+        except ValueError:
+            first = person['Lessee_Name__c']
+            last = ""
         pass_num = ""
         if '#' in last:
             last, pass_num = last.split("#")
@@ -78,15 +120,22 @@ def split_line(headerLine, line):
 #
 # __c indicates custom Salesforce field
 def read_csv(f):
-    people = []
+    temp_people = []
     with open(f, mode = 'r', encoding='utf-8-sig') as file:
         csvFile = csv.reader(file)
         lines = iter(csvFile)
         headerLine = next(lines)
         for line in lines:
-            people.extend(split_line(headerLine, line))
-
+            temp_people.extend(split_line(headerLine, line))
+    
+    people = [Person(p) for p in temp_people]
     return people
 
 def get_people(changed=False):
     return read_csv(get_most_recent(changed=changed))
+
+def main():
+    people = get_people()
+
+if __name__ == "__main__":
+    main()
