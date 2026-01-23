@@ -29,6 +29,12 @@ tables = {
         'name': 'Pooled_Lease__c',
         'columns': pool.pool_cols,
         'object': pool.Pooled_Lease
+    },
+    'task': {
+        'name': 'Task'
+    },
+    'applicant': {
+        'name': 'Applicant__c'
     }
 }
 
@@ -96,6 +102,9 @@ def insert_to_table(sf, to_insert, table=None):
         print('No table specified for insertion.')
         return False
     
+    if table not in [t['name'] for t in tables.values()]:
+        print(f'Table {table} not recognized for insertion.')
+    
     if to_insert:
         insert_results = sf.bulk2.__getattr__(table).insert(records=to_insert)
         print(insert_results)
@@ -106,7 +115,7 @@ def insert_to_table(sf, to_insert, table=None):
         job_id = insert_results[0]['job_id']
         sf.bulk2.Leases__c.get_failed_records(job_id, file=f'{job_id}_failed.csv')
     else:
-        print('No records to insert into {table}.')
+        print(f'No records to insert into {table}.')
 
     return False
 
@@ -182,7 +191,7 @@ def log_csv_diff(old_file, new_file, diff_file):
                 value['Change_Type'] = 'Removed Entry'
                 diffs.append(value)
 
-    print(f'{diff_file}: Found {len(diffs)} new entries between {old_file} and {new_file}')
+    print(f'{diff_file}: Found {len(diffs)} new/removed entries between {old_file} and {new_file}')
     create_csv(diff_file, diffs, delete=True)
 
 # Helper for create_diffs

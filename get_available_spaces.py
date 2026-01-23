@@ -123,6 +123,31 @@ def space_comparator(item1, item2):
     else: 
         return diff
 
+# Example Output:
+# 
+# Available parking spaces for date: 2026-08-31
+# ===================
+# Building: NU
+# -------------------
+# ('The Quarters on Campus', 'G0011', 'OPEN')
+# ('The Quarters on Campus', 'G0014', 'OPEN')
+# ('The Quarters on Campus', 'G0018', 'OPEN')
+# ... and 147 more
+# -------------------
+# Building: GR
+# -------------------
+# ('The Quarters on Campus', 'G0224', 'OPEN')
+# ('The Quarters on Campus', 'G0230', 'OPEN')
+# ('The Quarters on Campus', 'G0231', 'OPEN')
+# ... and 179 more
+# -------------------
+# Building: KN
+# -------------------
+# ('The Quarters on Campus', 'G0439', 'OPEN')
+# ('The Quarters on Campus', 'G0440', 'OPEN')
+# ('The Quarters on Campus', 'G0442', 'OPEN')
+# ... and 452 more
+# -------------------
 
 def main():
     args = parse_args()

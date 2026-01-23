@@ -1,4 +1,4 @@
-pool_cols = ', '.join(['Id', 'TT15_Share__c', 'TT15_Share_Amt__c', 'Lease_Id__r.Monthly_Rate__c', 'Lease_Id__r.Id', 'Lease_Id__r.Start_Date__c', 'Lease_Id__r.End_Date__c'])
+pool_cols = ', '.join(['Id', 'TT15_Share__c', 'TT15_Share_Amt__c', 'Lease_Id__r.Monthly_Rate__c', 'Lease_Id__r.Id', 'Lease_Id__r.Lessee_Name__c', 'Lease_Id__r.Start_Date__c', 'Lease_Id__r.End_Date__c'])
 
 class Pooled_Lease():
     def __init__(self, oDict):

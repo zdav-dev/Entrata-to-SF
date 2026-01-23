@@ -10,7 +10,9 @@ class Person:
         'End_Date__c': 'end',
         'Lessee_Name__c': 'name',
         'Email__c': 'email',
-        'Pass_Number__c': 'pass_num'
+        'Pass_Number__c': 'pass_num',
+        'Monthly_Rate__c': 'monthly_rate',
+        'Lease_Contract_Owner__c': 'contractor'
     }
 
     def __init__(self, data):
@@ -18,9 +20,16 @@ class Person:
         self.e_id = data['Entrata_Id__c']
         self.start = data['Start_Date__c']
         self.end = data['End_Date__c']
-        self.name = data['Lessee_Name__c']
-        self.email = data['Email__c']
+        self.name = data['Lessee_Name__c'].strip()
+        self.email = data['Email__c'].strip()
         self.pass_num = data['Pass_Number__c']
+        self.monthly_rate = data['Monthly_Rate__c']
+        self.contractor = None
+
+    def __setitem__(self, key, value):
+        if key in Person.attr_conversion:
+            object.__setattr__(self, Person.attr_conversion[key], value)
+
 
     def __getitem__(self, key):
         if key in Person.attr_conversion:

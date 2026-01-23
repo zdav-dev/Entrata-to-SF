@@ -123,8 +123,12 @@ def check_overlap(data, records):
     for record in records:
         try:
             parking_space = parking_space_to_ref[record['Parking_Space__c']]
-        except:
+        except Exception as e:
             parking_space = record['Parking_Space__c']
+
+        # if record['Lessee_Name__c'].startswith('Builder'):
+        #     print(record)
+        #     print(spaces[parking_space])
         
         if parking_space not in spaces:
             valid.append(record)
@@ -141,30 +145,33 @@ def check_overlap(data, records):
 def convert_record(record):
     try:
         record['Monthly_Rate__c'] = float(record['Monthly_Rate__c'])
-    except:
-        return False, record
+    except Exception as e:
+        return None, record
 
     # Convert to Salesforce IDs
     record['Lease_Contract_Owner__c'] = lease_owner_to_ref['The Quarters on Campus']
-    record['Parking_Space__c'] = parking_space_to_ref[record['Parking_Space__c']]
+    parking_space = record['Parking_Space__c']
+    record['Parking_Space__c'] = parking_space_to_ref[parking_space]
 
-    return True, record
+    return parking_space, record
 
 # Add new lease records to Salesforce
 # If any records fail to insert, they are returned in the failed list
 # Prints the results of the insert operation
 def add_records(records):
     to_insert = []
+    parking_spaces = []
     failed = []
     for record in records:
-        success, updated = convert_record(record)
-        if success:
+        parking_space, updated = convert_record(record)
+        if parking_space:
             to_insert.append(updated)
+            parking_spaces.append(parking_space)
         else:
             failed.append(updated)
 
     utils.insert_to_table(sf, to_insert, table='Leases__c')
-    return to_insert, failed
+    return parking_spaces, to_insert, failed
 
 # Only used to update Hardin House Records monthly rate to 0
 def update_records():
@@ -249,7 +256,11 @@ def main():
     updated = update_changed(changed, problems)
     new_records.extend(updated)
     valid, overlapping = check_overlap(data, new_records)
-    added, skipped = add_records(valid)
+    parking_spaces, added, skipped = add_records(valid)
+
+    # Convert back for printing
+    for i, record in enumerate(added):
+        record['Parking_Space__c'] = parking_spaces[i]
 
     # Data dumps
     utils.create_csv('overlapping', overlapping)

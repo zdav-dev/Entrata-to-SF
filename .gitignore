@@ -3,6 +3,7 @@
 *.csv
 *entrata*.py
 *.json
+*.zip
 !example.csv
 !read_entrata_csv.py
 __pycache__/

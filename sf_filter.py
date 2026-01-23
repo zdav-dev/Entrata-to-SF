@@ -1,4 +1,5 @@
 import argparse
+import os
 # import csv
 from utils import query_table
 from auth import sf
@@ -90,6 +91,7 @@ def output(csv_file, records):
     output_file = create_csv(csv_file, records, logs=False)
     if output_file:
         print(f'Output written to {output_file}.')
+        return output_file
 
 def save_records(csv_file, records, save_records_flag):
     if not save_records_flag:
@@ -98,44 +100,37 @@ def save_records(csv_file, records, save_records_flag):
     to_save = []
     for record in records:
         to_save.append({
-            'Id': record['Id'],
-            'Lease_Id': record['Lease_ID__r']['Id'],
+            'Name': record['Lease_ID__r']['Lessee_Name__c'],
+            'Start Date': record['Lease_ID__r']['Start_Date__c'],
+            'End Date': record['Lease_ID__r']['End_Date__c'],
             'Rate': record['Lease_ID__r']['Monthly_Rate__c'],
-            'TT15_Percent': record['TT15_Share__c'],
-            'TT15_Share_Amt': record['TT15_Share_Amt__c'],
+            'TT15 Percent': record['TT15_Share__c'],
+            'TT15 Share Amt': record['TT15_Share_Amt__c'],
         })
     output_file = create_csv(csv_file, to_save, logs=False)
     if output_file:
         print(f'Records saved to {output_file}.')
 
-# def read_from_file(csv_file):
-#     records = []
-#     with open(csv_file, 'r', encoding='utf-8-sig') as f:
-#         file = csv.reader(f)
-#         header = next(file)
-#         for line in file:
-#             temp = {col: val for col, val in zip(header, line)}
-#             record = {'Id': temp['Lease_Id'],
-#                       'Rate': temp['Rate']}
-#             records.append(record)
+    return output_file
 
-    
-#     return records
+def save_retail_info(txt_file, retail_additional, save_records_flag):
+    if not save_records_flag:
+        return
 
-# def target_amount(amt, csv_file):
-#     records = read_from_file(csv_file)
-#     total = sum(float(record['TT15_Share_Amt']) for record in records)
-#     print(f'Target Amount: {amt}, Total from File: {total}')
-#     diff = total - amt
-#     print(f'Difference: {diff}')
-#     exit()
-#     i = 0
-#     while total >= amt and i < len(records):
-#         record = records[i]
-#         record['Rate'] -= 10.00
-#         record['TT15_Share_Amt'] = round(record['Rate'] * float(record['TT15_Percent']) / 100, 2)
-#         total -= record['TT15_Share_Amt']
-#         i += 1
+    with open(txt_file, 'w') as f:
+        for date, years_added, start_extra in retail_additional:
+            f.write(f"$85 increased by 10% for {years_added} five-year period{'s' if years_added != 1 else ''} for {date} \
+from February 1st, 2017: ${start_extra:,.2f} x 25 spaces = ${start_extra * 25:,.2f}\n")
+            
+    return txt_file
+
+def zip_files(file_list, zip_name):
+    import zipfile
+    with zipfile.ZipFile(zip_name, 'w') as zipf:
+        for file in file_list:
+            zipf.write(file)
+            os.remove(file)
+    print(f'Files zipped into {zip_name}.')
 
 def main():
     args = parse_args()
@@ -146,6 +141,8 @@ def main():
     #exit()
     #read_from_file(f'pool_{dates[0]}.csv')
     output_dicts = []
+    retail_additional = []
+    to_zip = []
     total_q = 0
     for result, date in query_pool(dates):
         years_added = (datetime.strptime(date, "%Y-%m-%d").date() - datetimedate(2017, 2, 1)).days // 365 // 5
@@ -153,6 +150,8 @@ def main():
         for _ in range(years_added):
             start_extra *= 1.10
             start_extra = round(start_extra, 4)
+
+        retail_additional.append((date, years_added, start_extra))
 
         tt15_extra = start_extra * 25
         print(f'Adding extra ${tt15_extra:,.2f}')
@@ -162,14 +161,23 @@ def main():
 
         print(f"Total Records Retrieved: {result['totalSize']}")
         print(f'Total Payment Amount: ${payment_total:,.2f}')
-        save_records(f'pool_{date}.csv', result['records'], args.save_records)
+        f = save_records(f'pool_{date}.csv', result['records'], args.save_records)
+        if f:
+            to_zip.append(f)
 
     print("=====")
     print(f'Total Payment Amount for {dates[0]} through {dates[-1]}: ${total_q:,.2f}')
     print("=====")
+    f = save_retail_info(f'TT15_additional_{dates[0]}_{dates[-1]}.txt', retail_additional, args.save_records)
+    if f:
+        to_zip.append(f)
 
-    output(args.output_file, output_dicts)
+    f = output(args.output_file, output_dicts)
+    if f:
+        to_zip.append(f)
 
+    if to_zip:
+        zip_files(to_zip, f'TT15_reports_{dates[0]}_{dates[-1]}.zip')
 
 if __name__ == "__main__":
     main()
