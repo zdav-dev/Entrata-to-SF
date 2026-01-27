@@ -215,6 +215,10 @@ def assign_spaces(to_move):
         spiterator = SpaceIterator(sp.get_open_spaces(start))
         for applicant in applicants:
             try:
+                if not applicant['Pass_Number__c']:
+                    print(f'No parking pass specified for {applicant["Full_Name__c"]}. Skipping.')
+                    continue
+
                 space = confirm_space(spiterator)
                 if not space:
                     continue
@@ -237,7 +241,7 @@ def assign_spaces(to_move):
 # Assigns a parking space to valid applicants and inserts as Leases
 # Deletes moved Applicants from Salesforce
 def move_from_applicants():
-    soql_query = "SELECT Id, Start_Date__c, End_Date__c, Full_Name__c, Email__c, Status__c, Monthly_Rate__c FROM Applicant__c LIMIT 100"
+    soql_query = "SELECT Id, Start_Date__c, End_Date__c, Full_Name__c, Email__c, Status__c, Monthly_Rate__c, Pass_Number__c FROM Applicant__c LIMIT 100"
     results = sf.query_all(soql_query)['records']
     valid = [r for r in results if r['Status__c'] == 'Paid' and r['Monthly_Rate__c']]
     if not valid:

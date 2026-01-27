@@ -273,8 +273,10 @@ def download_from_drive():
     previous = file_list[-2] if len(file_list) > 1 else None
     print(f'Added {most_recent}')
     shutil.copyfile(f'{drive_dir}/{most_recent}', f'csvs/{most_recent}')
+    yesterday = tgt_name.replace(str(datetime.datetime.now().day), str(datetime.datetime.now().day - 1)) \
+                + '_Rentable Items Availability.csv'
 
-    if previous:
+    if previous == yesterday:
         try:
             drive_csv_diff(f'csvs/{most_recent}', f'csvs/{previous}')
         except Exception as e:
