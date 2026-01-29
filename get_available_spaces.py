@@ -160,11 +160,13 @@ def main():
         buildings = ['NU', 'GR', 'KN']
     else:
         buildings = ['KN']
-        
+
+    tot = 0
     for key, val in get_open_spaces(date).items():
         if key not in buildings:
             continue
 
+        tot += len(val)
         print(f'Building: {key}')
         print('-------------------')
         s = sorted(val, key=cmp_to_key(space_comparator))
@@ -174,6 +176,8 @@ def main():
         if len(val) > args.print_amount:
             print(f'... and {len(val) - args.print_amount} more')
         print('-------------------')
+
+    print(f'Total available spaces: {tot}')
 
 
 if __name__ == '__main__':

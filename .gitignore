@@ -4,6 +4,7 @@
 *entrata*.py
 *.json
 *.zip
+*.txt
 !example.csv
 !read_entrata_csv.py
 __pycache__/

@@ -202,19 +202,21 @@ def get_matching_files(dir = "./logs"):
 
 # Creates csvs with the difference between new and old csvs
 # overlapping.csv compares to overlapping(1).csv
-def create_diffs():
+def create_diffs(excluded = set(('added(1).csv'))):
     for old, new in get_matching_files():
+        if old in excluded or new in excluded:
+            continue
         log_csv_diff(f"./logs/{old}", f"./logs/{new}", f"diffs/{old.replace('.csv', '')}")
 
 
 # Deletes old log files and renames (1).csv to .csv
-def advance_logs(excluded = set(('added(1).csv'))):
+def advance_logs():
     create_diffs()
     log_dir = 'logs'
     files = os.listdir(log_dir)
     for file in files:
         # Deletes old log if it exists
-        if file.endswith('(1).csv') and file not in excluded:
+        if file.endswith('(1).csv'):
             new_file = os.path.join(log_dir, file)
             old_file = new_file.replace('(1).csv', '.csv')
             os.rename(new_file, old_file)
