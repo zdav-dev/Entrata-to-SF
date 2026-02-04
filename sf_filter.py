@@ -102,7 +102,6 @@ def date_to_quarter(d):
 
 def save_records(csv_file, records, save_records_flag):
     if not save_records_flag:
-        print("AAHAHHHAHAHHAHAH")
         return
     
     to_save = []
