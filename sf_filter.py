@@ -93,8 +93,16 @@ def output(csv_file, records):
         print(f'Output written to {output_file}.')
         return output_file
 
+# d is formatted as YYYY-MM-DD
+def date_to_quarter(d):
+    date_split = d.split("-")
+    month = int(date_split[1])
+    quarter = (month - 1) // 3 + 1
+    return f"Q{quarter} {date_split[0]}"
+
 def save_records(csv_file, records, save_records_flag):
     if not save_records_flag:
+        print("AAHAHHHAHAHHAHAH")
         return
     
     to_save = []
@@ -104,9 +112,12 @@ def save_records(csv_file, records, save_records_flag):
             'Start Date': record['Lease_ID__r']['Start_Date__c'],
             'End Date': record['Lease_ID__r']['End_Date__c'],
             'Rate': record['Lease_ID__r']['Monthly_Rate__c'],
-            'TT15 Percent': record['TT15_Share__c'],
+            'TT15 Share Percent': record['TT15_Share__c'],
             'TT15 Share Amt': record['TT15_Share_Amt__c'],
+            'Quarter Added to Pool': date_to_quarter(record['Lease_ID__r']['Start_Date__c'])
         })
+
+    to_save.sort(key=lambda x: x['Start Date'])
     output_file = create_csv(csv_file, to_save, logs=False)
     if output_file:
         print(f'Records saved to {output_file}.')

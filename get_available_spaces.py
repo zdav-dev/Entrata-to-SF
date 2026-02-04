@@ -43,6 +43,10 @@ def parse_args():
 
     return parser.parse_args()
 
+# Determine the query date based on args
+# If future, use the next August
+# If date provided, use that date
+# Otherwise, use today's date
 def get_date(args):
     date_year, date_month = dt_date.today().year, dt_date.today().month
 

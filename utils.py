@@ -202,7 +202,7 @@ def get_matching_files(dir = "./logs"):
 
 # Creates csvs with the difference between new and old csvs
 # overlapping.csv compares to overlapping(1).csv
-def create_diffs(excluded = set(('added(1).csv'))):
+def create_diffs(excluded = set(['added(1).csv'])):
     for old, new in get_matching_files():
         if old in excluded or new in excluded:
             continue
