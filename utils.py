@@ -104,6 +104,7 @@ def insert_to_table(sf, to_insert, table=None):
     
     if table not in [t['name'] for t in tables.values()]:
         print(f'Table {table} not recognized for insertion.')
+        return False
     
     if to_insert:
         insert_results = sf.bulk2.__getattr__(table).insert(records=to_insert)

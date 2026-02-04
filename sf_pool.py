@@ -8,7 +8,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Manage leases and pooled leases.')
     parser.add_argument('-q', '--quarter', type=int, required=False, help='Quarter number (1-4)')
     parser.add_argument('-y', '--year', type=int, required=False, help='Year (e.g., 2024)')
-    parser.add_argument('-t', '--target', type=int, required=True, help='Number of leases to total in the pool')
+    parser.add_argument('-t', '--target', type=int, required=False, help='Number of leases to total in the pool')
     return parser.parse_args()
 
 def get_dates_from_quarter(quarter, year):
@@ -49,6 +49,36 @@ def choose_to_add(leases, pool, amount):
 
     return result
 
+def add_to_pool(leases_to_add, share_percent):
+    to_insert = []
+    for lease in leases_to_add:
+        record = {
+            'Lease_ID__c': lease['Id'],
+            'TT15_Share__c': share_percent,
+        }
+        to_insert.append(record)
+
+    return utils.insert_to_table(sf, to_insert, table='Pooled_Lease__c')
+
+def add_from_target(pool, target, quarter, year):
+    if target <= len(pool):
+        print(f'Pool already has {len(pool)} leases, which meets or exceeds the target of {target}. No leases to add.')
+        return
+
+    leases = get_leases_from_quarter(quarter, year)
+    leases_to_add = choose_to_add(leases, pool, target - len(pool))
+    
+    print(f'Adding {len(leases_to_add)} leases to the pool for Q{quarter} {year}.')
+    share_percent = pool[0]['TT15_Share__c']
+
+    cont = input(f'Proceed to add leases with TT15 Share Amount of {share_percent}%? (y/n): ')
+    if cont.lower() != 'y':
+        print('Operation cancelled.')
+        return
+    
+    return add_to_pool(leases_to_add, share_percent)
+
+
 def main():
     args = parse_args()
     if args.quarter and args.quarter not in [1, 2, 3, 4]:
@@ -67,17 +97,16 @@ def main():
         year = 2025
 
     pool = get_pool_from_quarter(quarter, year)
-    
-    if args.target <= len(pool):
-        print(f'Pool already has {len(pool)} leases, which meets or exceeds the target of {args.target}. No leases to add.')
+
+    if not pool:
+        print(f'No leases found in the pool for Q{quarter} {year}.')
         return
-
-    leases = get_leases_from_quarter(quarter, year)
-    leases_to_add = choose_to_add(leases, pool, args.target - len(pool))
     
-    print(f'Adding {len(leases_to_add)} leases to the pool for Q{quarter} {year}.')
-    print(leases_to_add[0])
-    print(pool[0])
-
+    if args.target:
+        add_from_target(pool, args.target, quarter, year)
+        return
+    
+    print(f'Leases in the pool for Q{quarter} {year}: {len(pool)}')
+    
 if __name__ == '__main__':
     main()
