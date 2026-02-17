@@ -97,7 +97,7 @@ def delete_from_csv(sf, csv_file="to_delete.csv", table=None):
     except AttributeError:
         print(f"Table {table} does not exist.")
 
-def insert_to_table(sf, to_insert, table=None):
+def insert_to_table(sf, to_insert, table=None, save_success=False):
     if not table:
         print('No table specified for insertion.')
         return False
@@ -109,16 +109,54 @@ def insert_to_table(sf, to_insert, table=None):
     if to_insert:
         insert_results = sf.bulk2.__getattr__(table).insert(records=to_insert)
         print(insert_results)
-        if insert_results[0]['numberRecordsFailed'] == 0:
-            return True
-        
-        # If failed records, get failed records -> csv
         job_id = insert_results[0]['job_id']
-        sf.bulk2.Leases__c.get_failed_records(job_id, file=f'{job_id}_failed.csv')
+        if insert_results[0]['numberRecordsFailed'] == 0:
+            if save_success:
+                sf.bulk2.__getattr__(table).get_successful_records(job_id, file=f'{job_id}_success.csv')
+            return True
+        else:
+            # If failed records, get failed records -> csv
+            sf.bulk2.__getattr__(table).get_failed_records(job_id, file=f'{job_id}_failed.csv')
     else:
         print(f'No records to insert into {table}.')
 
     return False
+
+def update_table(sf, to_update, table=None):
+    if not table:
+        print('No table specified for update.')
+        return False
+    
+    if table not in [t['name'] for t in tables.values()]:
+        print(f'Table {table} not recognized for update.')
+        return False
+    
+    if to_update:
+        update_results = sf.bulk2.__getattr__(table).update(records=to_update)
+        print(update_results)
+        job_id = update_results[0]['job_id']
+        if update_results[0]['numberRecordsFailed'] == 0:
+            return True
+        else:
+            # If failed records, get failed records -> csv
+            sf.bulk2.__getattr__(table).get_failed_records(job_id, file=f'{job_id}_failed_update.csv')
+    else:
+        print(f'No records to update in {table}.')
+
+    return False
+
+def update_where(sf, where, update_col, update_val, table=None):
+    if not table:
+        print('No table specified for update.')
+        return False
+    
+    try:
+        records = query_table(sf, table, where=where)['records']
+        to_update = [{'Id': record['Id'], update_col: update_val} for record in records]
+        return update_table(sf, to_update, table=tables[table]['name'])
+    except Exception as e:
+        print(f'Error during update: {e}')
+        return False
 
 # Lists columns for a given custom table
 def list_cols(sf, obj_name):

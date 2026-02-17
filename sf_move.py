@@ -263,7 +263,7 @@ def move_from_applicants():
 
         date_val = datetime.strptime(move_in_list[0]['Start_Date__c'], "%Y-%m-%d").strftime("%B %Y")
         print(f'Moving in {len(move_in_list)} applicants for {date_val}...')
-        result = utils.insert_to_table(sf, move_in_list, table='Leases__c')
+        result = utils.insert_to_table(sf, move_in_list, table='Leases__c', save_success=True)
         if not result:
             print('Error inserting leases. Aborting move-in.')
             continue

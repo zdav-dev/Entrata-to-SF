@@ -186,10 +186,13 @@ def update_records():
 # Return changed records to use for checking overlap with new adds
 def update_changed(changed, records):
     lookup = {f'{r['Entrata_Id__c']}{r['Start_Date__c']}':r for r in changed}
+    matched = set()
     updated = []
+    delete = []
     for record in records:
         try:
             r = lookup[f'{record['Entrata_Id__c']}{record['Start_Date__c']}']
+            matched.add(r['Entrata_Id__c'])
             r['End_Date__c'] = record['End_Date__c']
             sf.Leases__c.update(r['Id'], {'End_Date__c': r['End_Date__c']})
             print(f'Updated record {r['Id']}.')
@@ -197,7 +200,11 @@ def update_changed(changed, records):
         except KeyError:
             pass
 
-    return updated
+    for _, record in lookup.items():
+        if record['Entrata_Id__c'] not in matched:
+            delete.append({key: val for key, val in record.items() if key in ['Entrata_Id__c', 'Start_Date__c', 'End_Date__c', 'Parking_Space__c', 'Lessee_Name__c']})
+    
+    return updated, delete
 
 # Creates a lookup for to verify that SF records match parking spaces in 'people'
 def get_people_lookup():
@@ -253,7 +260,7 @@ def main():
     # changed: sf data that recognizes something has changed
     # problems: csv data that differs from sf data
     # updated: csv data that has been updated to sf
-    updated = update_changed(changed, problems)
+    updated, delete = update_changed(changed, problems)
     new_records.extend(updated)
     valid, overlapping = check_overlap(data, new_records)
     parking_spaces, added, skipped = add_records(valid)
@@ -267,6 +274,7 @@ def main():
     utils.create_csv('skipped', skipped)
     utils.create_csv('added', added)
     utils.create_csv('updated', updated)
+    utils.create_csv('delete', delete)
     utils.advance_logs()
 
 if __name__ == "__main__":

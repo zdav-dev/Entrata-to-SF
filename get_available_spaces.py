@@ -114,7 +114,6 @@ def space_comparator(item1, item2):
     if item1[2] == 'OPEN' and item2[2] == 'OPEN':
         return l[item1[0][0]] - l[item2[0][0]]
     
-    # OPEN comes first
     if item1[2] == 'OPEN':
         return -1
     
@@ -166,6 +165,7 @@ def main():
         buildings = ['KN']
 
     tot = 0
+    quarters_tot = 0
     for key, val in get_open_spaces(date).items():
         if key not in buildings:
             continue
@@ -177,11 +177,17 @@ def main():
         for space, _ in zip(s, range(0, args.print_amount)):
             print(space)
 
+        for space in s:
+            if space[0] in ['The Quarters on Campus']: # '2215'
+                quarters_tot += 1
+        
+
         if len(val) > args.print_amount:
             print(f'... and {len(val) - args.print_amount} more')
         print('-------------------')
 
     print(f'Total available spaces: {tot}')
+    print(f'Total available spaces for Quarters: {quarters_tot}')
 
 
 if __name__ == '__main__':
