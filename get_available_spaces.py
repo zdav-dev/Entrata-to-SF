@@ -133,8 +133,8 @@ def space_comparator(item1, item2):
 # Building: NU
 # -------------------
 # ('The Quarters on Campus', 'G0011', 'OPEN')
-# ('The Quarters on Campus', 'G0014', 'OPEN')
-# ('The Quarters on Campus', 'G0018', 'OPEN')
+# ('2215', 'G0014', 'OPEN')
+# ('The Quarters on Campus', 'G0018', '1/1/2027')
 # ... and 147 more
 # -------------------
 # Building: GR

@@ -151,21 +151,21 @@ def main():
     #exit()
     #read_from_file(f'pool_{dates[0]}.csv')
     output_dicts = []
-    retail_additional = []
+    # retail_additional = []
     to_zip = []
     total_q = 0
     for result, date in query_pool(dates):
-        years_added = (datetime.strptime(date, "%Y-%m-%d").date() - datetimedate(2017, 2, 1)).days // 365 // 5
-        start_extra = base_tt15_amount
-        for _ in range(years_added):
-            start_extra *= 1.10
-            start_extra = round(start_extra, 4)
+        # years_added = (datetime.strptime(date, "%Y-%m-%d").date() - datetimedate(2017, 2, 1)).days // 365 // 5
+        # start_extra = base_tt15_amount
+        # for _ in range(years_added):
+        #     start_extra *= 1.10
+        #     start_extra = round(start_extra, 4)
 
-        retail_additional.append((date, years_added, start_extra))
+        # retail_additional.append((date, years_added, start_extra))
 
-        tt15_extra = start_extra * 25
-        print(f'Adding extra ${tt15_extra:,.2f}')
-        payment_total = round(sum(record['TT15_Share_Amt__c'] for record in result['records'])+ tt15_extra, 2)
+        # tt15_extra = start_extra * 25
+        # print(f'Adding extra ${tt15_extra:,.2f}')
+        payment_total = round(sum(record['TT15_Share_Amt__c'] for record in result['records']), 2)
         output_dicts.append({'Date': date, '# Leases in Pool': result['totalSize'], 'TT15 Payment': payment_total})
         total_q += payment_total
 
@@ -178,7 +178,7 @@ def main():
     print("=====")
     print(f'Total Payment Amount for {dates[0]} through {dates[-1]}: ${total_q:,.2f}')
     print("=====")
-    f = save_retail_info(f'TT15_additional_{dates[0]}_{dates[-1]}.txt', retail_additional, args.save_records)
+    # f = save_retail_info(f'TT15_additional_{dates[0]}_{dates[-1]}.txt', retail_additional, args.save_records)
     if f:
         to_zip.append(f)
 
