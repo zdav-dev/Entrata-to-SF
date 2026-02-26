@@ -36,6 +36,10 @@ def choose_to_add(leases, pool, amount):
     lease_ids = set(r['Id'] for r in leases)
     available_to_add = lease_ids - pool_lease_ids
 
+    if not len(available_to_add):
+        print('No available leases to add to the pool.')
+        return []
+
     where = f"WHERE Contractor_Name__r.name = 'The Quarters on Campus' AND Building__c = 'KN'"
     spaces = set(s['Name'] for s in utils.query_table(sf, 'parking', where)['records'])
     lease_lookup = {r['Id']: r for r in leases if r['Id'] in available_to_add and r['Parking_Space__r']['Name'] in spaces}
@@ -49,7 +53,18 @@ def choose_to_add(leases, pool, amount):
 
     return result
 
-def add_to_pool(leases_to_add, share_percent):
+def update_lease_pool_date(leases_to_add, pool_quarter, pool_year):
+    to_update = []
+    for lease in leases_to_add:
+        record = {
+            'Id': lease['Id'],
+            'Pool_Quarter__c': f'Q{pool_quarter} {pool_year}'
+        }
+        to_update.append(record)
+
+    return utils.update_table(sf, to_update, table='Lease__c')
+
+def add_to_pool(leases_to_add, share_percent, quarter, year):
     to_insert = []
     for lease in leases_to_add:
         record = {
@@ -58,7 +73,9 @@ def add_to_pool(leases_to_add, share_percent):
         }
         to_insert.append(record)
 
-    return utils.insert_to_table(sf, to_insert, table='Pooled_Lease__c')
+    result = utils.insert_to_table(sf, to_insert, table='Pooled_Lease__c')
+    update_lease_pool_date(leases_to_add, quarter, year)
+    return result
 
 def add_from_target(pool, target, quarter, year):
     if target <= len(pool):
@@ -71,12 +88,12 @@ def add_from_target(pool, target, quarter, year):
     print(f'Adding {len(leases_to_add)} leases to the pool for Q{quarter} {year}.')
     share_percent = pool[0]['TT15_Share__c']
 
-    cont = input(f'Proceed to add leases with TT15 Share Amount of {share_percent}%? (y/n): ')
+    cont = input(f'Proceed to add leases with TT15 Share Amount of {share_percent*100}%? (y/n): ')
     if cont.lower() != 'y':
         print('Operation cancelled.')
         return
     
-    return add_to_pool(leases_to_add, share_percent)
+    return add_to_pool(leases_to_add, share_percent, quarter, year)
 
 
 def main():
@@ -107,6 +124,7 @@ def main():
         return
     
     print(f'Leases in the pool for Q{quarter} {year}: {len(pool)}')
+    print(f'Percentage for each lease: {pool[0]["TT15_Share__c"]*100}%')
     
 if __name__ == '__main__':
     main()

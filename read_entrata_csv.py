@@ -12,7 +12,8 @@ class Person:
         'Email__c': 'email',
         'Pass_Number__c': 'pass_num',
         'Monthly_Rate__c': 'monthly_rate',
-        'Lease_Contract_Owner__c': 'contractor'
+        'Lease_Contract_Owner__c': 'contractor',
+        'Is_Resident__c': 'is_resident'
     }
 
     def __init__(self, data):
@@ -24,6 +25,7 @@ class Person:
         self.email = data['Email__c'].strip()
         self.pass_num = data['Pass_Number__c']
         self.monthly_rate = data['Monthly_Rate__c']
+        self.is_resident = data['Is_Resident__c']
         self.contractor = None
 
     def __setitem__(self, key, value):
@@ -103,7 +105,12 @@ def split_line(headerLine, line):
         del person['Dates']
         try:
             last, first = person['Lessee_Name__c'].split(", ")
-            first = first.split("(")[0].strip()
+            first_split = first.split("(")
+            if len(first_split) > 1:
+                person['Is_Resident__c'] = True
+            else:
+                person['Is_Resident__c'] = False
+            first = first_split[0].strip()
         except ValueError:
             first = person['Lessee_Name__c']
             last = ""

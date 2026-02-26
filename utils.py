@@ -176,6 +176,11 @@ def list_all(sf):
     for obj in ('Parking_Space', 'Leases', 'Contractor'):
         list_cols(sf, obj + '__c')
 
+# YYYY-MM-DD to Q3 2025, e.g.
+def get_quarter(date):
+    year, month, _ = date.split('-')
+    quarter = (int(month) - 1) // 3 + 1
+    return f'Q{quarter} {year}'
 
 # Set parking space lookup
 # Used for converting parking space names to Salesforce IDs

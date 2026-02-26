@@ -123,17 +123,6 @@ def save_records(csv_file, records, save_records_flag):
 
     return output_file
 
-def save_retail_info(txt_file, retail_additional, save_records_flag):
-    if not save_records_flag:
-        return
-
-    with open(txt_file, 'w') as f:
-        for date, years_added, start_extra in retail_additional:
-            f.write(f"$85 increased by 10% for {years_added} five-year period{'s' if years_added != 1 else ''} for {date} \
-from February 1st, 2017: ${start_extra:,.2f} x 25 spaces = ${start_extra * 25:,.2f}\n")
-            
-    return txt_file
-
 def zip_files(file_list, zip_name):
     import zipfile
     with zipfile.ZipFile(zip_name, 'w') as zipf:
@@ -145,7 +134,6 @@ def zip_files(file_list, zip_name):
 def main():
     args = parse_args()
     dates = list(get_quarter_dates(args))
-    base_tt15_amount = 85.00
     #target_amount()
     #get_total_from_file(f'pool_{dates[0]}.csv')
     #exit()
@@ -178,11 +166,8 @@ def main():
     print("=====")
     print(f'Total Payment Amount for {dates[0]} through {dates[-1]}: ${total_q:,.2f}')
     print("=====")
-    # f = save_retail_info(f'TT15_additional_{dates[0]}_{dates[-1]}.txt', retail_additional, args.save_records)
-    if f:
-        to_zip.append(f)
 
-    f = output(args.output_file, output_dicts)
+    f = output(f"{args.output_file}_overview", output_dicts)
     if f:
         to_zip.append(f)
 
