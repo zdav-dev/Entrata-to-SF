@@ -20,6 +20,7 @@ def get_leases_from_quarter(quarter, year):
     begin_date, last_date = get_dates_from_quarter(quarter, year)
     where = f"WHERE Start_Date__c <= {last_date} AND Start_Date__c >= {begin_date} AND Lease_Contract_Owner__r.name = 'The Quarters on Campus'"
 
+
     return utils.query_table(sf, 'lease', where)['records']
 
 def get_pool_from_quarter(quarter, year):
@@ -28,7 +29,6 @@ def get_pool_from_quarter(quarter, year):
     where = f"WHERE Lease_Id__r.Start_Date__c <= {last_date} AND Lease_Id__r.Start_Date__c >= {begin_date}"
 
     return utils.query_table(sf, 'pool', where)['records']
-
 
 # Choose lease Ids to add to the pool based on amount needed
 def choose_to_add(leases, pool, amount):
@@ -62,7 +62,7 @@ def update_lease_pool_date(leases_to_add, pool_quarter, pool_year):
         }
         to_update.append(record)
 
-    return utils.update_table(sf, to_update, table='Lease__c')
+    return utils.update_table(sf, to_update, table='Leases__c')
 
 def add_to_pool(leases_to_add, share_percent, quarter, year):
     to_insert = []

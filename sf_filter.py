@@ -167,7 +167,7 @@ def main():
     print(f'Total Payment Amount for {dates[0]} through {dates[-1]}: ${total_q:,.2f}')
     print("=====")
 
-    f = output(f"{args.output_file}_overview", output_dicts)
+    f = output(f"{args.output_file}_overview" if args.output_file else None, output_dicts)
     if f:
         to_zip.append(f)
 
