@@ -1,7 +1,7 @@
 import csv
 import os
 import shutil
-import datetime
+import datetime as dt
 import tables.lease as lease
 import tables.parking as parking
 import tables.contractor as contractor
@@ -45,6 +45,23 @@ def query_table(sf, table, where=""):
 
     return sf.query_all(f"SELECT {cols} FROM {name} {where}")
 
+# Get all leases from Salesforce
+# Quarters clause can be added to filter to only The Quarters on Campus leases
+def get_leases(sf, quarters=False):
+    if not quarters:
+        return query_table(
+            sf, 
+            'lease',
+            f"WHERE End_Date__c >= {dt.datetime.today().strftime('%Y-%m-%d')}"
+        )
+    
+    return query_table(
+        sf,
+        'lease', 
+        f"WHERE Lease_Contract_Owner__r.name = 'The Quarters on Campus'\
+        AND End_Date__c >= {dt.datetime.now().strftime('%Y-%m-%d')}"
+    )
+
 # Create a CSV file from a list of dictionaries
 def create_csv(name, data, delete=False, logs=True):
     if not data or not len(data) or not name:
@@ -69,6 +86,17 @@ def create_csv(name, data, delete=False, logs=True):
 
     return name
 
+def read_records_from_csv(csv_file):
+    with open(csv_file, 'r', encoding='utf-8-sig') as f:
+        csv_reader = csv.DictReader(f)
+        return [row for row in csv_reader]
+
+# Delete records from logs/delete.csv
+def delete_from_leases(sf, delete=True):
+    file = 'logs/delete.csv'
+    records = read_records_from_csv(file)
+    delete_from_records(sf, records, table=tables['lease']['name'])
+
 # Create a CSV file with all IDs for deletion
 def create_id_csv(data=None, csv_file='to_delete.csv', id_list=None):
     if (not data or not len(data)) and not id_list:
@@ -83,7 +111,8 @@ def create_id_csv(data=None, csv_file='to_delete.csv', id_list=None):
         writer.writerows(id_list)
 
 # Delete from a CSV file containing IDs
-def delete_from_csv(sf, csv_file="to_delete.csv", table=None):
+# table is table[col]['name'] for the table to delete from
+def delete_from_csv(sf, csv_file="to_delete.csv", table=None, remove=True):
     if not table:
         print("No table specified for deletion.")
         return
@@ -91,11 +120,46 @@ def delete_from_csv(sf, csv_file="to_delete.csv", table=None):
     try:
         job_id = sf.bulk2.__getattr__(table).delete(csv_file=csv_file)
         print(f'{table} Delete Job ID: {job_id}')
-        os.remove(csv_file)
+        if remove:
+            os.remove(csv_file)
     except FileNotFoundError:
         print("Nothing to delete.")
     except AttributeError:
         print(f"Table {table} does not exist.")
+
+# Matches records to lease IDs and returns list of IDs
+def get_lease_ids(sf, records):
+    leases = get_leases(sf)['records']
+    lookup = {f'{lease['Parking_Space__c']}{lease['Start_Date__c']}':lease['Id']for lease in leases}
+    id_list = []
+    for record in records:
+        try:
+            id = lookup[f"{record['Parking_Space__c']}{record['Start_Date__c']}"]
+            id_list.append({'Id': id})
+        except KeyError:
+            pass
+
+    return id_list
+
+# Deletes records from lease table
+# Assumes records does not contain salesforce IDs
+def delete_from_records(sf, records, table=None):
+    if not table:
+        print("No table specified for deletion.")
+        return False
+    
+    if not records or not len(records):
+        print("No records provided for deletion.")
+        return False
+    
+    id_list = get_lease_ids(sf, records)
+    if not id_list:
+        print("No matching records found for deletion.")
+        return False
+    
+    create_id_csv(id_list=id_list, csv_file='to_delete.csv')
+    delete_from_csv(sf, csv_file='to_delete.csv', table=table)
+    return True
 
 def insert_to_table(sf, to_insert, table=None, save_success=False):
     if not table:
@@ -302,7 +366,7 @@ def drive_csv_diff(new_file, old_file):
 # Gets most recent file from google drive folder
 # "Most Recent" determined by filename date prefix YYYY-MM-DD
 def download_from_drive():
-    tgt_name = datetime.datetime.now().strftime("%Y-%m-%d") + "_Rentable Items Availability.csv"
+    tgt_name = dt.datetime.now().strftime("%Y-%m-%d") + "_Rentable Items Availability.csv"
     if os.path.exists(f'csvs/{tgt_name}'):
         print("Most recent file already downloaded.")
         return True
@@ -319,7 +383,7 @@ def download_from_drive():
     previous = file_list[-2] if len(file_list) > 1 else None
     print(f'Added {most_recent}')
     shutil.copyfile(f'{drive_dir}/{most_recent}', f'csvs/{most_recent}')
-    yesterday = tgt_name.replace(str(datetime.datetime.now().day), str(datetime.datetime.now().day - 1)) \
+    yesterday = tgt_name.replace(str(dt.datetime.now().day), str(dt.datetime.now().day - 1)) \
                 + '_Rentable Items Availability.csv'
 
     if previous == yesterday:

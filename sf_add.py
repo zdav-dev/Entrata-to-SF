@@ -20,23 +20,6 @@ comparison_cols = [
 parking_space_to_ref = utils.set_parking_spaces(sf)
 lease_owner_to_ref = utils.set_lease_owners(sf)
 
-# Get all leases from Salesforce
-# Quarters clause can be added to filter to only The Quarters on Campus leases
-def get_leases(quarters=False):
-    if not quarters:
-        return utils.query_table(
-            sf, 
-            'lease',
-            f"WHERE End_Date__c >= {datetime.today().strftime('%Y-%m-%d')}"
-        )
-    
-    return utils.query_table(
-        sf,
-        'lease', 
-        f"WHERE Lease_Contract_Owner__r.name = 'The Quarters on Campus'\
-        AND End_Date__c >= {datetime.now().strftime('%Y-%m-%d')}"
-    )
-
 # Creates a lookup of Entrata IDs to existing lease records
 # Used to see if a record already exists in the system
 def get_id_lookup(data):
@@ -248,7 +231,7 @@ def main():
         print("No new CSV available. Exiting.")
         return
     # Get Lease Data from Salesforce
-    data = get_leases()['records']
+    data = utils.get_leases(sf)['records']
 
     # Check that entrata id's in salesforce match parking spaces in 'people'
     changed, _ = verify_sf_data(data)
@@ -276,6 +259,9 @@ def main():
     utils.create_csv('updated', updated)
     utils.create_csv('delete', delete)
     utils.advance_logs()
+
+    # Delete records that were logged for deletion
+    utils.delete_from_leases(sf, delete=False)
 
 if __name__ == "__main__":
     main()
